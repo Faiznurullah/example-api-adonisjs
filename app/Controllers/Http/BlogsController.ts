@@ -1,10 +1,11 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Database from '@ioc:Adonis/Lucid/Database'
+import Database from '@ioc:Adonis/Lucid/Database' 
+import Blog from 'App/Models/Blog'
 
 export default class BlogsController {
   public async index({ response }: HttpContextContract) {
 
-    const data = await Database.from('blogs').select('*');
+    const data = await Blog.all();
 
     if (data.length === 0) {
       return response.json({
@@ -21,17 +22,14 @@ export default class BlogsController {
 
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({  request, response }: HttpContextContract) {
 
-    const title = request.input('title')
-    const content = request.input('content')
+    const NewBlog = new Blog();
 
-    const data = {
-      title,
-      content
-    }
+    NewBlog.title = request.input('title')
+    NewBlog.content = request.input('content')
 
-    const result = await Database.insertQuery().table('blogs').insert(data);
+    const result = await NewBlog.save();
 
     return response.json({
       status: 200,
@@ -43,9 +41,9 @@ export default class BlogsController {
 
   public async create({}: HttpContextContract) {}
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ params, response }: HttpContextContract) { 
 
-    const DataBase = await Database.from('blogs').select('*').where('id', params.id);
+    const DataBase = await Blog.find(params.id);
 
     return response.json({
       status: 200,
@@ -58,15 +56,11 @@ export default class BlogsController {
 
   public async update({ params, request, response }: HttpContextContract) {
 
-    const title = request.input('title')
-    const content = request.input('content')
-
-    const data = {
-      title,
-      content
-    }
-
-    const result = await Database.from('blogs').where('id', params.id).update(data);
+    
+    const result = await Blog
+    .query()
+    .where('id', params.id)
+    .update({ title: request.input('title'), content:  request.input('content') })
 
     return response.json({
       status: 200,
@@ -77,7 +71,9 @@ export default class BlogsController {
 
   public async destroy({ params, response }: HttpContextContract) {
 
-    const result = await Database.from('blogs').where('id', params.id).delete();
+    const blog = await Blog.findOrFail(params.id)
+    await blog.delete()
+    
 
     return response.json({
       status: 200,
